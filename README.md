@@ -1,1 +1,1 @@
-# Multivariate-Nonparametric-Statistical-Process-Control
+# Multivariate Nonparametric Statistical Process Control
