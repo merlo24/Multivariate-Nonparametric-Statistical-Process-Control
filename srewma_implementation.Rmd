@@ -1,0 +1,30 @@
+---
+title: "Implementation of SREWMA Control Chart"
+author: "Jorge Merlo"
+date: "6/5/2021"
+output: 
+  md_document: 
+  variant: markdown_github
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Synopsis
+
+In any industry, quality of a process is determined by their capacity to generate products/services that met the requirements established by the consumers. To meet these specifications multivariate statistical process control (MSPC), through control charts, evaluates a multivariate process quality by monitoring its underlying distribution in real-time, the purpose of this is to detect as soon as possible any potential mean or scale shift attributed to special causes.
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
