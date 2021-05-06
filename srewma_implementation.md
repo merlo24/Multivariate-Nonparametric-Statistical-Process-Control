@@ -8,6 +8,18 @@ quality by monitoring its underlying distribution in real-time, the
 purpose of this is to detect as soon as possible any potential mean or
 scale shift attributed to special causes.
 
+Although the traditional Hotelling’s *T*<sup>2</sup> is the most common
+control chart in MSPC, it is built under the assumption that process
+follows a multivariate normal distribution. Nevertheless, it is well
+known that in practice this assumption is rarely fulfilled because of
+the process often following an unknown distribution.
+
+Therefore multivariate nonparametric approaches such as the Signed Rank
+Exponentially Weighted Average (SREWMA) control chart **(cita)** can be
+considered as an efficient alternative that allows the monitoring of
+processes for which no known distribution is assumed. In this document
+we discuss the implementation of SREWMA Control Chart.
+
     summary(cars)
 
     ##      speed           dist       
