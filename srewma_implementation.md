@@ -1,4 +1,4 @@
-## Synopsis
+# Synopsis
 
 In any industry, quality of a process is determined by their capacity to
 generate products/services that met the requirements established by the
@@ -14,27 +14,32 @@ follows a multivariate normal distribution. Nevertheless, it is well
 known that in practice this assumption is rarely fulfilled because of
 the process often following an unknown distribution.
 
-Therefore multivariate nonparametric approaches such as the Signed Rank
+Therefore, multivariate nonparametric approaches such as the Signed Rank
 Exponentially Weighted Average (SREWMA) control chart **(cita)** can be
 considered as an efficient alternative that allows the monitoring of
 processes for which no known distribution is assumed. In this document
-we discuss the implementation of SREWMA Control Chart.
+we discuss the implementation of SREWMA Control Chart to an important
+process monitoring problem in a semiconductor manufacturing industry.
+The dataset is available from the UC Irvine Machine Learning Repository
+(<http://archive.ics.uci.edu/ml/>
+machine-learning-databases/secom/secom.names).
 
-    summary(cars)
+# Data Preprocessing
 
-    ##      speed           dist       
-    ##  Min.   : 4.0   Min.   :  2.00  
-    ##  1st Qu.:12.0   1st Qu.: 26.00  
-    ##  Median :15.0   Median : 36.00  
-    ##  Mean   :15.4   Mean   : 42.98  
-    ##  3rd Qu.:19.0   3rd Qu.: 56.00  
-    ##  Max.   :25.0   Max.   :120.00
+In order to make a simple reproduction of the following analysis,
+instead of working with data that comes from a local .csv file we
+directly download the data from the url and load it into the
+environment:
 
-## Including Plots
+There are originally 1567 observations and 591 variables, but the
+dataset contains many missing values. Therefore, we process and clean
+the data before using it in our illustration. First, we remove the
+variables with constant value. We also remove the variables having 5 or
+more missing values:
 
-You can also embed plots, for example:
+    col.na = sapply(secom, function(x) sum(is.na(x))) # counting the number of NA's in each variable
+    sum(col.na>=5) # detecting which columns contain more than 5 missing values
 
-![](srewma_implementation_files/figure-markdown_strict/pressure-1.png)
+    ## [1] 314
 
-Note that the `echo = FALSE` parameter was added to the code chunk to
-prevent printing of the R code that generated the plot.
+    secom = secom[, which(col.na<5)] # filtering data based on the previous condition
