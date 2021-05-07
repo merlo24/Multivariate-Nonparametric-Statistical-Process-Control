@@ -24,22 +24,44 @@ The dataset is available from the UC Irvine Machine Learning Repository
 (<http://archive.ics.uci.edu/ml/>
 machine-learning-databases/secom/secom.names).
 
-# Data Preprocessing
+# Data Cleaning
 
 In order to make a simple reproduction of the following analysis,
 instead of working with data that comes from a local .csv file we
 directly download the data from the url and load it into the
 environment:
 
+    download.file("http://archive.ics.uci.edu/ml/machine-learning-databases/secom/secom.data", destfile = "secom.data") # explanatory variables
+
+    download.file("http://archive.ics.uci.edu/ml/machine-learning-databases/secom/secom_labels.data", destfile  = "secom_labels.data") # output
+
+    secom = read.table("secom.data")
+    secom_lab = read.table("secom_labels.data")[,1]
+    secom = cbind(secom,secom_lab) # concatenation of variables
+
 There are originally 1567 observations and 591 variables, but the
 dataset contains many missing values. Therefore, we process and clean
-the data before using it in our illustration. First, we remove the
-variables with constant value. We also remove the variables having 5 or
-more missing values:
+the data before using it in our illustration. We remove the variables
+having 5 or more missing values:
 
     col.na = sapply(secom, function(x) sum(is.na(x))) # counting the number of NA's in each variable
     sum(col.na>=5) # detecting which columns contain more than 5 missing values
 
     ## [1] 314
 
-    secom = secom[, which(col.na<5)] # filtering data based on the previous condition
+    secom = secom[, which(col.na<5)] # filtering of data based on the previous condition
+
+There are 278 remaining variables. Now, this data set has some missing
+observations, as variables with less than 5 missing observations are
+retained. Observations with missing values are ommited and finally, we
+remove the variables with constant value.
+
+    row.na = rowSums(is.na(secom)) # detecting observations with missing values
+    secom = secom[which(row.na==0), ] # filtering data based on previous condition
+    secom.fdf = secom[ ,apply(secom, 2, var) != 0] # final data frame to be analyzed (variables with constant value are removed)
+
+After data cleaning, there are 1549 observations and 248 variables. It
+is known from the data source that out of the 1544 observations
+available after cleaning, in 1447 cases the item passes the quality test
+whereas it fails in remaining 102 cases. Therefore, we consider the 1447
+observations as our reference sample.
