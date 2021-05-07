@@ -4,6 +4,7 @@ author: "Jorge Merlo"
 date: "6/5/2021"
 output: 
   html_document:
+    keep_html: true
     keep_md: true
 ---
 
