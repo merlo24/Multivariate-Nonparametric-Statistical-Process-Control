@@ -1,9 +1,9 @@
-Implementation of SREWMA Control Chart
+A Real Data Application of SREWMA Control Chart
 ================
 Jorge Merlo
 6/5/2021
 
-# Synopsis
+# Problem Statement
 
 In any industry, quality of a process is determined by their capacity to
 generate products/services that met the requirements established by the
@@ -65,6 +65,7 @@ remove the variables with constant value.
 row.na <- rowSums(is.na(secom)) # detecting observations with missing values
 secom <- secom[which(row.na==0), ] # filtering data based on previous condition
 secom.fdf <- secom[ ,apply(secom, 2, var) != 0] # final data frame to be analyzed (variables with constant value are removed)
+secom_ex <- secom.fdf[which(secom.fdf$secom_lab==-1), ] # in control dataset to be explored
 ```
 
 After data cleaning, there are 1549 observations and 248 variables. It
@@ -82,38 +83,117 @@ large entries, which demonstrates that the variables have considerable
 interrelationships and consequently a multivariate control chart is
 likely to be more appropriate than a univariate control chart. The plot
 below illustrates the pairwise variables that have a correlation greater
-of 0.999.
+than 0.999.
 
 ``` r
 source("corr_simple.R")
-corr_simple(secom.fdf, sig = 0.999)
+corr_simple(secom_ex, sig = 0.999)
 ```
 
     ## Warning: package 'corrplot' was built under R version 4.0.5
 
     ## corrplot 0.84 loaded
 
+    ## Warning in cor(df_cor): the standard deviation is zero
+
     ##       Var1 Var2       Freq
     ## 6421   V35  V37 -1.0000000
     ## 20994 V173 V175  0.9999998
     ## 34332 V308 V310  0.9999994
-    ## 29587 V153 V288  0.9999971
-    ## 40455 V253 V391  0.9999915
-    ## 40208 V252 V390  0.9999402
-    ## 39714 V250 V388  0.9999384
-    ## 59279 V584 V586  0.9998902
-    ## 48058 V177 V448  0.9998867
-    ## 53546 V390 V524  0.9998568
-    ## 53492 V252 V524  0.9998373
-    ## 52751 V249 V521  0.9997336
-    ## 28599 V148 V283  0.9995987
-    ## 48305 V178 V449  0.9995360
-    ## 50034 V188 V460  0.9995303
-    ## 28846 V149 V284  0.9995253
-    ## 47811 V176 V447  0.9994788
-    ## 41883 V148 V421  0.9993374
-    ## 50528 V196 V468  0.9992742
-    ## 53986 V255 V527  0.9992474
-    ## 48799 V182 V454  0.9991312
+    ## 29587 V153 V288  0.9999973
+    ## 40455 V253 V391  0.9999921
+    ## 40208 V252 V390  0.9999434
+    ## 39714 V250 V388  0.9999234
+    ## 59279 V584 V586  0.9999001
+    ## 48058 V177 V448  0.9998978
+    ## 53546 V390 V524  0.9998584
+    ## 53492 V252 V524  0.9998411
+    ## 52751 V249 V521  0.9997644
+    ## 28599 V148 V283  0.9996264
+    ## 28846 V149 V284  0.9995583
+    ## 50034 V188 V460  0.9995488
+    ## 48305 V178 V449  0.9995129
+    ## 47811 V176 V447  0.9994779
+    ## 41883 V148 V421  0.9993477
+    ## 53986 V255 V527  0.9992080
+    ## 50528 V196 V468  0.9991716
+    ## 48799 V182 V454  0.9991206
 
 ![](srewma_implementation_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+
+Plots below show the scatter plots of three randomly selected variables.
+The joint distribution of each pair of variables are far from bivariate
+normal. The normal Q-Q plots for these three distributions are also
+shown, which clearly indicate that the marginals are not normal either:
+
+``` r
+set.seed(123)
+secom_test <- secom_ex[, -ncol(secom_ex)]
+secom_test <- secom_test[, sample(ncol(secom_ex), 3)]
+
+par(mfrow = c(2,3))
+w <- combn(3,2)
+nam <- colnames(secom_test)
+
+for (i in 1:6) {
+  
+  if (i <= 3){
+    plot(secom_test[,w[1,i]], secom_test[,w[2,i]], pch = 16, xlab = nam[w[1,i]], 
+         ylab = nam[w[2,i]], cex.lab = 1.5, cex.axis = 1.5)
+  } else {
+    qqnorm(secom_test[,(i-3)], ylab = sprintf("%s Sample Quantiles", 
+                                             ylab = nam[w[2,(i-3)]]), 
+           cex.lab = 1.5, cex.axis = 1.5)
+    qqline(secom_test[,(i-3)], col = "red")
+  }
+  
+}
+```
+
+![](srewma_implementation_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+
+We also run the Shapiro-Wilk goodness-of-fit test for normality and the
+Mardia’s multivariate normality test:
+
+``` r
+library(MVN)
+```
+
+    ## Registered S3 method overwritten by 'GGally':
+    ##   method from   
+    ##   +.gg   ggplot2
+
+    ## sROC 0.1-2 loaded
+
+``` r
+mvn(secom_test)
+```
+
+    ## $multivariateNormality
+    ##              Test        Statistic p value Result
+    ## 1 Mardia Skewness 16944.2142435055       0     NO
+    ## 2 Mardia Kurtosis 354.725571676656       0     NO
+    ## 3             MVN             <NA>    <NA>     NO
+    ## 
+    ## $univariateNormality
+    ##           Test  Variable Statistic   p value Normality
+    ## 1 Shapiro-Wilk   V377       0.8700  <0.001      NO    
+    ## 2 Shapiro-Wilk   V491       0.9580  <0.001      NO    
+    ## 3 Shapiro-Wilk   V431       0.3251  <0.001      NO    
+    ## 
+    ## $Descriptives
+    ##         n         Mean      Std.Dev  Median     Min      Max     25th     75th
+    ## V377 1447  0.001595992 5.283896e-04  0.0016  0.0004   0.0082  0.00130  0.00190
+    ## V491 1447 51.402471527 1.805835e+01 48.4924 13.7225 142.8436 38.56920 61.70265
+    ## V431 1447 17.273799585 3.114764e+01 10.9684  0.0000 400.0000  6.92585 17.34045
+    ##           Skew  Kurtosis
+    ## V377 2.5836973 23.577787
+    ## V491 0.9057055  1.361428
+    ## V431 7.8994888 76.704842
+
+All these tests together with the plots shown above suggest that the
+multivariate normality assumption is invalid and thus we could expect
+the nonparametric chart to be more robust and powerful than normal-based
+approaches for this dataset.
+
+# SREWMA Control Chart Implementation

@@ -1,5 +1,5 @@
 ---
-title: "Implementation of SREWMA Control Chart"
+title: "A Real Data Application of SREWMA Control Chart"
 author: "Jorge Merlo"
 date: "6/5/2021"
 output:
@@ -11,7 +11,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Synopsis
+# Problem Statement
 
 In any industry, quality of a process is determined by their capacity to generate products/services that met the requirements established by the consumers. To meet these specifications multivariate statistical process control (MSPC), through control charts, evaluates a multivariate process quality by monitoring its underlying distribution in real-time, the purpose of this is to detect as soon as possible any potential mean or scale shift attributed to special causes.
 
@@ -47,17 +47,55 @@ There are 278 remaining variables. Now, this data set has some missing observati
 row.na <- rowSums(is.na(secom)) # detecting observations with missing values
 secom <- secom[which(row.na==0), ] # filtering data based on previous condition
 secom.fdf <- secom[ ,apply(secom, 2, var) != 0] # final data frame to be analyzed (variables with constant value are removed)
+secom_ex <- secom.fdf[which(secom.fdf$secom_lab==-1), ] # in control dataset to be explored
 ```
 
 After data cleaning, there are 1549 observations and 248 variables. It is known from the data source that out of the 1544 observations available after cleaning, in 1447 cases the item passes the quality test whereas it fails in remaining 102 cases. Therefore, we consider the 1447 observations as our reference sample.
 
 # Exploratory Analysis
 
-It is desirable to set up an on-line detection system to monitor the production process of the secom manufacturing process to guarantee its quality. The sample correlation matrix of this data  contains several large entries, which demonstrates that the variables have considerable interrelationships and consequently a multivariate control chart is likely to be more appropriate than a univariate control chart. The plot below illustrates the pairwise variables that have a correlation greater of 0.999. 
+It is desirable to set up an on-line detection system to monitor the production process of the secom manufacturing process to guarantee its quality. The sample correlation matrix of this data  contains several large entries, which demonstrates that the variables have considerable interrelationships and consequently a multivariate control chart is likely to be more appropriate than a univariate control chart. The plot below illustrates the pairwise variables that have a correlation greater than 0.999. 
 
 ```{r}
 source("corr_simple.R")
-corr_simple(secom.fdf, sig = 0.999)
+corr_simple(secom_ex, sig = 0.999)
 ```
+
+Plots below show the scatter plots of three randomly selected variables. The joint distribution of each pair of variables are far from bivariate normal. The normal Q-Q plots for these three distributions are also shown, which clearly indicate that the marginals are not normal either:
+
+```{r}
+set.seed(123)
+secom_test <- secom_ex[, -ncol(secom_ex)]
+secom_test <- secom_test[, sample(ncol(secom_ex), 3)]
+
+par(mfrow = c(2,3))
+w <- combn(3,2)
+nam <- colnames(secom_test)
+
+for (i in 1:6) {
+  
+  if (i <= 3){
+    plot(secom_test[,w[1,i]], secom_test[,w[2,i]], pch = 16, xlab = nam[w[1,i]], 
+         ylab = nam[w[2,i]], cex.lab = 1.5, cex.axis = 1.5)
+  } else {
+    qqnorm(secom_test[,(i-3)], ylab = sprintf("%s Sample Quantiles", 
+                                             ylab = nam[w[2,(i-3)]]), 
+           cex.lab = 1.5, cex.axis = 1.5)
+    qqline(secom_test[,(i-3)], col = "red")
+  }
+  
+}
+```
+
+We also run the Shapiro-Wilk goodness-of-fit test for normality and the Mardia’s multivariate normality test:
+
+```{r}
+library(MVN)
+mvn(secom_test)
+```
+
+All these tests together with the plots shown above suggest that the multivariate normality assumption is invalid and thus we could expect the nonparametric chart to be more robust and powerful than normal-based approaches for this dataset.
+
+# SREWMA Control Chart Implementation
 
 
