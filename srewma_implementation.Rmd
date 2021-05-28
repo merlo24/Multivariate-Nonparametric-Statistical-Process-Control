@@ -15,10 +15,11 @@ knitr::opts_chunk$set(echo = TRUE)
 
 In any industry, quality of a process is determined by their capacity to generate products/services that met the requirements established by the consumers. To meet these specifications multivariate statistical process control (MSPC), through control charts, evaluates a multivariate process quality by monitoring its underlying distribution in real-time, the purpose of this is to detect as soon as possible any potential mean or scale shift attributed to special causes.
 
-Although the traditional Hotelling's $T^2$ is the most common control chart in MSPC, it is built under the assumption that process follows a multivariate normal distribution. Nevertheless, it is well known that in practice this assumption is rarely fulfilled because of the process often following an unknown distribution.
+Although the traditional Hotelling's $T^2$ is the most common control chart in MSPC, it is built under the assumption that process follows a multivariate normal distribution. Nevertheless, it is well known that in practice this assumption is rarely fulfilled because of the process often following an unknown distribution. 
 
-Therefore, multivariate nonparametric approaches such as the Signed Rank Exponentially Weighted Average (SREWMA) control chart **(cita)** can be considered as an efficient alternative that allows the monitoring of processes for which no known distribution is assumed. In this document we discuss the implementation of SREWMA Control Chart to a real dataset from a white wine production
-process. The data set contains a total of 4898 observations, and is publicly available in the UC Irvine Machine Learning Repository (http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-white.csv).
+Therefore, multivariate nonparametric approaches such as the Signed Rank Exponentially Weighted Average (SREWMA) control chart **(cita)** can be considered as an efficient alternative, since allows us to monitor the mean of a multivariate processes for which no known distribution is assumed. 
+
+In this document we reproduce the SREWMA control chart, it has been of the most referenced works in nonparametric MSPC since is a pioneering proposal that can start monitoring with a little amount of historical observations. A ready-to-use function is provided and if necessary, it can be easily adapted to the needs of the practitioner. We discuss its implementation to a real dataset from a white wine production process. The data set contains a total of 4898 observations, and is publicly available in the UC Irvine Machine Learning Repository (http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality).
 
 # Exploratory Analysis
 
@@ -32,9 +33,9 @@ D <- read.csv("wq_data.csv", sep = ";")
 head(D)
 ```
 
-The data were recorded by a computerized system, which automatically manages the process of wine sample testing from producer requests to laboratory and sensory analysis. For each observation, there are eleven continuous measurements (based on physicochemical tests) including fixed acidity, volatile acidity, citric acid, residual sugar, chlorides, free sulfur dioxide, total sulfur dioxide, density, pH, sulphates, and alcohol (denoted by $x_1, x_2, . . . , x_{11}$, respectively). A categorical variable, quality, indicating the wine quality between 0 (very bad) and 10 (excellent) is also provided based on sensory analysis. The goal of this data analysis is mainly to model and monitor wine quality based on physicochemical tests. more detailed discussion about this dataset is given by *Cortez et al.* and the references therein.
+The data were recorded by a computerized system, which automatically manages the process of wine sample testing from producer requests to laboratory and sensory analysis. For each observation, there are eleven continuous measurements (based on physicochemical tests) including fixed acidity, volatile acidity, citric acid, residual sugar, chlorides, free sulfur dioxide, total sulfur dioxide, density, pH, sulphates, and alcohol (denoted by $x_1, x_2, . . . , x_{11}$, respectively). A categorical variable, quality, indicating the wine quality between 0 (very bad) and 10 (excellent) is also provided based on sensory analysis. The goal of this data analysis is mainly to model and monitor wine quality based on physicochemical tests more detailed discussion about this dataset is given by **Cortez et al.** and the references therein.
 
-Under the SPC context of sequentially monitoring the wine production process, we assume that the standard quality level is 7 (LV7; as also suggested by Cortez et al. [4]). The sample correlation matrix of this data (shown below) contains several large entries, which demonstrates that the variables have considerable interrelationships and consequently a multivariate control chart is likely to be more appropriate than a univariate control chart.  
+Under the SPC context of sequentially monitoring the wine production process, we assume that the in control observations are those whose standard quality level is 7 (LV7; as also suggested by Cortez et al.). The sample correlation matrix of this data (shown below) contains several large entries, which demonstrates that the variables have considerable interrelationships and consequently a multivariate control chart is likely to be more appropriate than a univariate control chart.  
 
 ```{r}
 library("corrplot")
@@ -78,7 +79,7 @@ All these tests together with the plots shown above suggest that the multivariat
 
 # SREWMA Control Chart Implementation
 
-Lets assume that we have $m  = 20$ historical observations from LV7 and initially monitored 30 observations from LV7 and then obtained the LV6 observations sequentially. The location parameter is of the greatest interest and thus we construct the SREWMA control charts to monitor the wine quality. The IC ARL is fixed at 500, and the values of $\lambda$ are chosen to be 0.025 and 0.005 for SREWMA and SSEWMA respectively to ensure their IC robustness to this non-normal data.
+In order to implement the SREWMA control chart lets assume that we have only $m  = 20$ historical observations from LV7 and initially monitored 30 observations from LV7 and then obtained the LV6 observations sequentially. The location parameter is of the greatest interest and thus we construct the SREWMA control charts to monitor the wine quality. We set the control limit $h$ to obtain a false alarm every 500 in control monitoring points **(see reference for a detailed discussion on the performance of a control chart)**, the values of $\lambda$ are chosen to be 0.025 for the SREWMA to ensure their IC robustness to this non-normal data, **reference** provide tables with parameters $h$ and $\lambda$ corresponding to other specific scenarios.
 
 ```{r}
 library(SpatialNP)

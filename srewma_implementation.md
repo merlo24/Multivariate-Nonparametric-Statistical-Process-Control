@@ -21,13 +21,19 @@ the process often following an unknown distribution.
 
 Therefore, multivariate nonparametric approaches such as the Signed Rank
 Exponentially Weighted Average (SREWMA) control chart **(cita)** can be
-considered as an efficient alternative that allows the monitoring of
-processes for which no known distribution is assumed. In this document
-we discuss the implementation of SREWMA Control Chart to a real dataset
-from a white wine production process. The data set contains a total of
-4898 observations, and is publicly available in the UC Irvine Machine
-Learning Repository
-(<http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-white.csv>).
+considered as an efficient alternative, since allows us to monitor the
+mean of a multivariate processes for which no known distribution is
+assumed.
+
+In this document we reproduce the SREWMA control chart, it has been of
+the most referenced works in nonparametric MSPC since is a pioneering
+proposal that can start monitoring with a little amount of historical
+observations. A ready-to-use function is provided and if necessary, it
+can be easily adapted to the needs of the practitioner. We discuss its
+implementation to a real dataset from a white wine production process.
+The data set contains a total of 4898 observations, and is publicly
+available in the UC Irvine Machine Learning Repository
+(<http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality>).
 
 # Exploratory Analysis
 
@@ -77,17 +83,17 @@ alcohol (denoted by
 A categorical variable, quality, indicating the wine quality between 0
 (very bad) and 10 (excellent) is also provided based on sensory
 analysis. The goal of this data analysis is mainly to model and monitor
-wine quality based on physicochemical tests. more detailed discussion
-about this dataset is given by *Cortez et al.* and the references
+wine quality based on physicochemical tests more detailed discussion
+about this dataset is given by **Cortez et al.** and the references
 therein.
 
 Under the SPC context of sequentially monitoring the wine production
-process, we assume that the standard quality level is 7 (LV7; as also
-suggested by Cortez et al. \[4\]). The sample correlation matrix of this
-data (shown below) contains several large entries, which demonstrates
-that the variables have considerable interrelationships and consequently
-a multivariate control chart is likely to be more appropriate than a
-univariate control chart.
+process, we assume that the in control observations are those whose
+standard quality level is 7 (LV7; as also suggested by Cortez et al.).
+The sample correlation matrix of this data (shown below) contains
+several large entries, which demonstrates that the variables have
+considerable interrelationships and consequently a multivariate control
+chart is likely to be more appropriate than a univariate control chart.
 
 ``` r
 library("corrplot")
@@ -204,13 +210,17 @@ approaches for this dataset.
 
 # SREWMA Control Chart Implementation
 
-Lets assume that we have *m* = 20 historical observations from LV7 and
-initially monitored 30 observations from LV7 and then obtained the LV6
-observations sequentially. The location parameter is of the greatest
-interest and thus we construct the SREWMA control charts to monitor the
-wine quality. The IC ARL is fixed at 500, and the values of *λ* are
-chosen to be 0.025 and 0.005 for SREWMA and SSEWMA respectively to
-ensure their IC robustness to this non-normal data.
+In order to implement the SREWMA control chart lets assume that we have
+only *m* = 20 historical observations from LV7 and initially monitored
+30 observations from LV7 and then obtained the LV6 observations
+sequentially. The location parameter is of the greatest interest and
+thus we construct the SREWMA control charts to monitor the wine quality.
+We set the control limit *h* to obtain a false alarm every 500 in
+control monitoring points **(see reference for a detailed discussion on
+the performance of a control chart)**, the values of *λ* are chosen to
+be 0.025 for the SREWMA to ensure their IC robustness to this non-normal
+data, **reference** provide tables with parameters *h* and *λ*
+corresponding to other specific scenarios.
 
 ``` r
 library(SpatialNP)
