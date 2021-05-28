@@ -1,0 +1,184 @@
+---
+title: "A Real Data Application of MW-D2 Control Chart"
+author: "Jorge Merlo"
+date: "6/5/2021"
+output:
+  github_document:
+  html_preview: false 
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Problem Statement
+
+In any industry, quality of a process is determined by their capacity to generate products/services that met the requirements established by the consumers. To meet these specifications multivariate statistical process control (MSPC), through control charts, evaluates a multivariate process quality by monitoring its underlying distribution in real-time, the purpose of this is to detect as soon as possible any potential mean or scale shift attributed to special causes.
+
+Although the traditional Hotelling's $T^2$ is the most common control chart in MSPC, it is built under the assumption that process follows a multivariate normal distribution. Nevertheless, it is well known that in practice this assumption is rarely fulfilled because of the process often following an unknown distribution.
+
+Therefore, multivariate nonparametric approaches such as the Signed Rank Exponentially Weighted Average (SREWMA) control chart **(cita)** can be considered as an efficient alternative that allows the monitoring of processes for which no known distribution is assumed. In this document we discuss the implementation of SREWMA Control Chart to an important process monitoring problem in a semiconductor manufacturing industry. The dataset is available from the UC Irvine Machine Learning Repository (http://archive.ics.uci.edu/ml/machine-learning-databases/secom/secom.names).
+
+# Data Cleaning
+
+In order to make a simple reproduction of the following analysis, instead of working with data that comes from a local .csv file we directly download the data from the url and load it into the environment:
+
+```{r}
+download.file("http://archive.ics.uci.edu/ml/machine-learning-databases/secom/secom.data", destfile = "secom.data") # explanatory variables
+
+download.file("http://archive.ics.uci.edu/ml/machine-learning-databases/secom/secom_labels.data", destfile  = "secom_labels.data") # output
+
+secom <- read.table("secom.data")
+secom_lab <- read.table("secom_labels.data")[,1]
+secom <- cbind(secom,secom_lab) # concatenation of variables
+```
+
+There are originally 1567 observations and 591 variables, but the dataset contains many missing values. Therefore, we process and clean the data before using it in our illustration. We remove the variables having 5 or more missing values:
+
+```{r}
+col.na <- sapply(secom, function(x) sum(is.na(x))) # counting the number of NA's in each variable
+# sum(col.na >= 5) # detecting how many columns contain more than 5 missing values
+secom <- secom[, which(col.na < 5)] # filtering of data based on the previous condition
+```
+
+There are 278 remaining variables. Now, this data set has some missing observations, as variables with less than 5 missing observations are retained. Observations with missing values are ommited and finally, we remove the variables with constant value.
+
+```{r}
+row.na <- rowSums(is.na(secom)) # detecting observations with missing values
+secom <- secom[which(row.na==0), ] # filtering data based on previous condition
+secom.fdf <- secom[ ,apply(secom, 2, var) != 0] # final data frame to be analyzed (variables with constant value are removed)
+secom_ex <- secom.fdf[which(secom.fdf$secom_lab==-1), ] # in control dataset to be explored
+```
+
+After data cleaning, there are 1549 observations and 248 variables. It is known from the data source that out of the 1544 observations available after cleaning, in 1447 cases the item passes the quality test whereas it fails in remaining 102 cases. Therefore, we consider the 1447 observations as our reference sample.
+
+# Exploratory Analysis
+
+It is desirable to set up an on-line detection system to monitor the production process of the secom manufacturing process to guarantee its quality. The sample correlation matrix of this data  contains several large entries, which demonstrates that the variables have considerable interrelationships and consequently a multivariate control chart is likely to be more appropriate than a univariate control chart. The plot below illustrates the pairwise variables that have a correlation greater than 0.999. 
+
+```{r}
+source("corr_simple.R")
+corr_simple(secom_ex, sig = 0.999)
+```
+
+Plots below show the scatter plots of three randomly selected variables. The joint distribution of each pair of variables are far from bivariate normal. The normal Q-Q plots for these three distributions are also shown, which clearly indicate that the marginals are not normal either:
+
+```{r}
+set.seed(123)
+secom_test <- secom_ex[, -ncol(secom_ex)]
+secom_test <- secom_test[, sample(ncol(secom_ex), 3)]
+
+par(mfrow = c(2,3))
+w <- combn(3,2)
+nam <- colnames(secom_test)
+
+for (i in 1:6) {
+  
+  if (i <= 3){
+    plot(secom_test[,w[1,i]], secom_test[,w[2,i]], pch = 16, xlab = nam[w[1,i]], 
+         ylab = nam[w[2,i]], cex.lab = 1.5, cex.axis = 1.5)
+  } else {
+    qqnorm(secom_test[,(i-3)], ylab = sprintf("%s Sample Quantiles", 
+                                             ylab = nam[w[2,(i-3)]]), 
+           cex.lab = 1.5, cex.axis = 1.5)
+    qqline(secom_test[,(i-3)], col = "red")
+  }
+  
+}
+```
+
+We also run the Shapiro-Wilk goodness-of-fit test for normality and the Mardia’s multivariate normality test:
+
+```{r}
+library(MVN)
+mvn(secom_test)
+```
+
+All these tests together with the plots shown above suggest that the multivariate normality assumption is invalid and thus we could expect the nonparametric chart to be more robust and powerful than normal-based approaches for this dataset.
+
+# SREWMA Control Chart Implementation
+
+We assume we have $m = 20$ historical observations considered as in control historical observations and initially monitored 30 observations from
+considered in control and then obtained 50 observations sequentially as out of control. We used a parameter $\lambda = 0.025$ with its corresponding control limit.
+
+```{r}
+library(mvtnorm)
+library(SpatialNP)
+library(depth.plot)
+
+set.seed(123)
+
+m <- 1000
+nic <- 30
+noc <- 50
+lam <- 0.025
+
+D <- secom.fdf
+D.ic <- D[which(D[,ncol(D)] == -1),(1:(ncol(D)-1))] # In control data
+
+p <- ncol(D)-1
+
+r.ic = sample(1:nrow(D.ic), (m+nic))
+
+xr <- D.ic[r.ic[1:m], ]
+
+xic <- D.ic[r.ic[(m+1):(m+nic)], ]
+xoc <- D[which(D[,ncol(D)] == 1),(1:(ncol(D)-1))]
+xoc <- xoc[sample(1:nrow(xoc), noc),]
+
+xi <- rbind(xic, xoc)
+
+ni <- nic + noc
+
+S0 <- cov(xr)
+
+M0 <- chol(solve(S0, tol = 1.12944e-18))
+xrt <- as.matrix(xr)%*%M0
+
+sr_m0 <- SpatialNP::spatial.rank(xrt, shape = F)
+
+sr_m0_2 <- sr_m0^2
+RE0 <- apply(sr_m0_2, 1, sum)
+RE0 <- sum(RE0)
+
+sr_t <- c()
+
+REt <- matrix(0, 1, p)
+
+vt <- matrix(0, 2, p)
+
+Qt <- c()
+
+for (t in 1:ni) {
+  S = cov(xr)
+  M = chol(solve(S))
+  xut = rbind(xr,xi)%*%M
+  
+  sr_t = depth.plot::spatial.rank(xut[nrow(xut), ], xut[1:(nrow(xut)-1),])
+    
+  REt[co,] = sr_t^2
+  REt = rbind(REt, rep(0,p))
+  sREt = apply(REt, 1, sum)
+  sREt = sum(sREt)
+    
+  eps_t = (RE0 + sREt)/nrow(xut)
+  
+  xr = rbind(xr, xi)
+    
+  vt[(co+1),] = ((1-lambda)*vt[co,])+((lambda)*sr_t)
+    
+  vt = rbind(vt, rep(0, p))
+    
+  Qt = c(Qt, (((2-lam)*p)/(lam*eps_t))*sum(vt[(t+1),]^2))
+  
+  print(t)
+  
+}
+
+x11()
+par(cex.axis = 1.5)
+plot(1:ni, Qt, pch = 20, type = 'o', main = "SREWMA Control Chart for WQD Data", xlab = "Time",
+     cex.lab = 1.5, cex.main = 2)
+abline(h = 21.397)
+```
+
