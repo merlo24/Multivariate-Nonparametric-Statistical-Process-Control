@@ -3,7 +3,7 @@ A Real Data Application of SREWMA Control Chart
 Jorge Merlo
 6/5/2021
 
-# Problem Statement
+## Problem Statement
 
 In any industry, quality of a process is determined by their capacity to
 generate products/services that met the requirements established by the
@@ -20,22 +20,22 @@ known that in practice this assumption is rarely fulfilled because of
 the process often following an unknown distribution.
 
 Therefore, multivariate nonparametric approaches such as the Signed Rank
-Exponentially Weighted Average (SREWMA) control chart **(cita)** can be
-considered as an efficient alternative, since allows us to monitor the
-mean of a multivariate processes for which no known distribution is
-assumed.
+Exponentially Weighted Average (SREWMA) control chart Zou et al. (2012)
+can be considered as an efficient alternative, since allows us to
+monitor the mean of a multivariate processes for which no known
+distribution is assumed.
 
-In this document we reproduce the SREWMA control chart, it has been of
-the most referenced works in nonparametric MSPC since is a pioneering
-proposal that can start monitoring with a little amount of historical
-observations. A ready-to-use function is provided and if necessary, it
-can be easily adapted to the needs of the practitioner. We discuss its
-implementation to a real dataset from a white wine production process.
-The data set contains a total of 4898 observations, and is publicly
-available in the UC Irvine Machine Learning Repository
+In this document we reproduce the SREWMA control chart, this has been
+one of the most referenced works in nonparametric MSPC since is a
+pioneering proposal that can start monitoring with a little amount of
+historical observations. A ready-to-use function is provided and if
+necessary, it can be easily adapted to the needs of the practitioner. We
+discuss its implementation to a real dataset from a white wine
+production process. The data set contains a total of 4898 observations,
+and is publicly available in the UC Irvine Machine Learning Repository
 (<http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality>).
 
-# Exploratory Analysis
+## Exploratory Analysis
 
 In order to make a simple reproduction of the following analysis,
 instead of working with data that comes from a local .csv file we
@@ -83,17 +83,18 @@ alcohol (denoted by
 A categorical variable, quality, indicating the wine quality between 0
 (very bad) and 10 (excellent) is also provided based on sensory
 analysis. The goal of this data analysis is mainly to model and monitor
-wine quality based on physicochemical tests more detailed discussion
-about this dataset is given by **Cortez et al.** and the references
+wine quality based on physicochemical tests, more detailed discussion
+about this dataset is given by Cortez et al. (2009) and the references
 therein.
 
 Under the SPC context of sequentially monitoring the wine production
-process, we assume that the in control observations are those whose
-standard quality level is 7 (LV7; as also suggested by Cortez et al.).
-The sample correlation matrix of this data (shown below) contains
-several large entries, which demonstrates that the variables have
-considerable interrelationships and consequently a multivariate control
-chart is likely to be more appropriate than a univariate control chart.
+process, we assume that the in control and out of control observations
+and are those whose standard quality level is 7 (LV7; as also suggested
+by Cortez et al. (2009)) and 6 respectively. The sample correlation
+matrix of this data (shown below) contains several large entries, which
+demonstrates that the variables have considerable interrelationships and
+consequently a multivariate control chart is likely to be more
+appropriate than a univariate control chart.
 
 ``` r
 library("corrplot")
@@ -208,19 +209,19 @@ multivariate normality assumption is invalid and thus we could expect
 the nonparametric chart to be more robust and powerful than normal-based
 approaches for this dataset.
 
-# SREWMA Control Chart Implementation
+## SREWMA Control Chart Implementation
 
 In order to implement the SREWMA control chart lets assume that we have
 only *m* = 20 historical observations from LV7 and initially monitored
 30 observations from LV7 and then obtained the LV6 observations
 sequentially. The location parameter is of the greatest interest and
 thus we construct the SREWMA control charts to monitor the wine quality.
-We set the control limit *h* to obtain a false alarm every 500 in
-control monitoring points **(see reference for a detailed discussion on
-the performance of a control chart)**, the values of *λ* are chosen to
-be 0.025 for the SREWMA to ensure their IC robustness to this non-normal
-data, **reference** provide tables with parameters *h* and *λ*
-corresponding to other specific scenarios.
+We set the control limit *h* = 22.918 (solid horizontal line) to obtain
+a false alarm every 500 in control monitoring points (see Qiu (2014) for
+a detailed discussion on the performance of a control chart), the values
+of *λ* are chosen to be 0.025 for the SREWMA to ensure their IC
+robustness to this non-normal data, Zou et al. (2012) provides tables
+with *h* and *λ* parameters corresponding to other specific scenarios.
 
 ``` r
 library(SpatialNP)
@@ -308,7 +309,31 @@ for (t in 1:ni) {
 par(cex.axis = 1.5)
 plot(1:ni, Qt, pch = 20, type = 'o', main = "SREWMA Control Chart for WQD Data", xlab = "Time",
      cex.lab = 1.5, cex.main = 2)
-abline(h = 21.397)
+abline(h = 22.918)
+abline(v = 30, lty = 2)
 ```
 
 ![](srewma_implementation_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+
+## Conclusions
+
+From the plot, it can be seen that the SREWMA chart exceeds its control
+limit from around the 34th observation (the 14th out of control LV6
+observation) onwards. This excursion suggests that a marked step-change
+has occurred as we intended, no false alarm is presented and a quick
+alarm is issued as process real status is out of control (vertical
+dotted line). This alarm is issued once the monitoring statistic (black
+dot) is greater than a certain control limit (solid line). A deeper
+theoretical analysis and performance assessment of SREWMA control chart
+can be consulted in Zou et al. (2012).
+
+## References
+
+Zou, C., Wang, Z. & Tsung, F. (2012). A spatial rank-based multivariate
+ewma control chart.NavalResearch Logistics (NRL),59(2), 91–110
+
+P. Cortez, A. Cerdeira, F. Almeida, T. Matos, and J. Reis, Modeling wine
+preferences by data mining from physicochemical properties, Decision
+Support Syst 47 (2009), 547–553.
+
+Qiu, P. (2014).Introduction to statistical process control. CRC Press.
