@@ -167,9 +167,9 @@ From the plot, it can be seen that the SREWMA chart exceeds its control
 limit from around the 34th observation (the 14th out of control LV6 observation) onwards. This excursion suggests that a marked step-change has occurred as we intended, no false alarm is presented and a quick alarm is issued as process real status is out of control (vertical dotted line). This alarm is issued once the monitoring statistic (black dot) is greater than a certain control limit (solid line). A deeper theoretical analysis and performance assessment of SREWMA control chart can be consulted in Zou et al. (2012).
 
 ## References
-Zou, C., Wang, Z. & Tsung, F. (2012). A spatial rank-based multivariate ewma control chart.NavalResearch Logistics (NRL),59(2), 91–110
-
 P. Cortez, A. Cerdeira, F. Almeida, T. Matos, and J. Reis, Modeling wine preferences by data mining from physicochemical properties, Decision Support Syst 47 (2009), 547–553.
 
-Qiu, P. (2014).Introduction to statistical process control. CRC Press.
+Qiu, P. (2014). Introduction to statistical process control. CRC Press.
+
+Zou, C., Wang, Z. & Tsung, F. (2012). A spatial rank-based multivariate ewma control chart.NavalResearch Logistics (NRL),59(2), 91–110
 

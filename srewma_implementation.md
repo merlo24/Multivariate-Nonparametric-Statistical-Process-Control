@@ -329,11 +329,11 @@ can be consulted in Zou et al. (2012).
 
 ## References
 
-Zou, C., Wang, Z. & Tsung, F. (2012). A spatial rank-based multivariate
-ewma control chart.NavalResearch Logistics (NRL),59(2), 91–110
-
 P. Cortez, A. Cerdeira, F. Almeida, T. Matos, and J. Reis, Modeling wine
 preferences by data mining from physicochemical properties, Decision
 Support Syst 47 (2009), 547–553.
 
-Qiu, P. (2014).Introduction to statistical process control. CRC Press.
+Qiu, P. (2014). Introduction to statistical process control. CRC Press.
+
+Zou, C., Wang, Z. & Tsung, F. (2012). A spatial rank-based multivariate
+ewma control chart.NavalResearch Logistics (NRL),59(2), 91–110
